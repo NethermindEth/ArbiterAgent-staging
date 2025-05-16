@@ -108,14 +108,16 @@ class MongoDBHandler:
         # Get collection
         collection = self.get_collection_name(task_id)
         
+        current_time = datetime.utcnow()
+        
         # Create FindingDB objects
         finding_dbs = []
         for finding in input_data.findings:
             finding_db = FindingDB(
                 **finding.model_dump(),
                 agent_id=agent_id,
-                created_at=datetime.utcnow(),
-                updated_at=datetime.utcnow()
+                created_at=current_time,
+                updated_at=current_time
             )
             finding_dbs.append(finding_db)
         
@@ -220,6 +222,77 @@ class MongoDBHandler:
             findings.append(FindingDB(**doc))
             
         return findings
+        
+    async def get_agent_findings_since(self, task_id: str, agent_id: str, since_timestamp: datetime) -> List[FindingDB]:
+        """
+        Get all findings for an agent in a task created after a specific timestamp.
+        
+        Args:
+            task_id: Task identifier
+            agent_id: Agent identifier
+            since_timestamp: Only include findings created after this timestamp
+            
+        Returns:
+            List of findings for the agent in the task since the specified timestamp
+        """
+        collection = self.get_collection_name(task_id)
+        
+        # Query database for findings created after the timestamp
+        cursor = self.db[collection].find({
+            "agent_id": agent_id,
+            "created_at": {"$gt": since_timestamp}
+        })
+        findings = []
+        
+        async for doc in cursor:
+            findings.append(FindingDB(**doc))
+            
+        return findings
+        
+    async def get_metadata(self, key: str) -> Optional[Dict[str, Any]]:
+        """
+        Get metadata from the metadata collection.
+        
+        Args:
+            key: Metadata key
+            
+        Returns:
+            Metadata value if found, None otherwise
+        """
+        # Use a separate collection for metadata
+        metadata_collection = "metadata"
+        
+        # Query database
+        doc = await self.db[metadata_collection].find_one({"key": key})
+        
+        return doc
+        
+    async def set_metadata(self, key: str, value: Dict[str, Any]) -> bool:
+        """
+        Set metadata in the metadata collection.
+        
+        Args:
+            key: Metadata key
+            value: Metadata value
+            
+        Returns:
+            True if operation was successful
+        """
+        # Use a separate collection for metadata
+        metadata_collection = "metadata"
+        
+        # Add the key to the value dictionary
+        value["key"] = key
+        value["updated_at"] = datetime.utcnow()
+        
+        # Upsert the document (insert if not exists, update if exists)
+        result = await self.db[metadata_collection].update_one(
+            {"key": key},
+            {"$set": value},
+            upsert=True
+        )
+        
+        return result.acknowledged
 
 # Global MongoDB handler instance
 mongodb = MongoDBHandler() 
