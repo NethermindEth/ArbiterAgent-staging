@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from app.models.finding_input import FindingInput, Finding
 from app.models.finding_db import FindingDB
+from app.config import config
 
 class MongoDBHandler:
     """
@@ -31,7 +32,7 @@ class MongoDBHandler:
         is_docker = os.path.exists("/.dockerenv")  # Docker environment detection
         default_mongo_url = "mongodb://mongodb:27017" if is_docker else "mongodb://localhost:27017"
         
-        self.connection_string = connection_string or os.getenv("MONGODB_URL", default_mongo_url)
+        self.connection_string = connection_string or config.mongodb_url or default_mongo_url
         self.database_name = "security_findings"
     
     async def connect(self):

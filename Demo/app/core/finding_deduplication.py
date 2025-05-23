@@ -13,6 +13,7 @@ from app.core.claude_model import create_similarity_chain
 from app.database.mongodb_handler import mongodb
 from app.models.finding_input import Finding, FindingInput
 from app.models.finding_db import FindingDB, Status, EvaluatedSeverity
+from app.config import config
 
 # Load environment variables
 load_dotenv()
@@ -40,10 +41,7 @@ class FindingDeduplication:
         
         # Get similarity threshold from param, env var, or default
         if similarity_threshold is None:
-            try:
-                similarity_threshold = float(os.getenv("SIMILARITY_THRESHOLD", DEFAULT_SIMILARITY_THRESHOLD))
-            except (ValueError, TypeError):
-                similarity_threshold = DEFAULT_SIMILARITY_THRESHOLD
+            similarity_threshold = config.similarity_threshold
         
         # Validate similarity threshold
         if not 0.0 <= similarity_threshold <= 1.0:

@@ -1,5 +1,5 @@
 from typing import Optional, Dict, Any
-from app.config import CLAUDE_MODEL, CLAUDE_TEMPERATURE, CLAUDE_MAX_TOKENS, CLAUDE_API_KEY
+from app.config import config
 from langchain_anthropic import ChatAnthropic
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
@@ -18,10 +18,10 @@ def get_model_config() -> Dict[str, Any]:
         Dictionary with model configuration parameters
     """
     return {
-        "model_name": CLAUDE_MODEL,
-        "temperature": CLAUDE_TEMPERATURE,
-        "max_tokens": CLAUDE_MAX_TOKENS,
-        "anthropic_api_key": CLAUDE_API_KEY
+        "model_name": config.claude_model,
+        "temperature": config.claude_temperature,
+        "max_tokens": config.claude_max_tokens,
+        "anthropic_api_key": config.claude_api_key
     }
 
 def create_claude_model(
