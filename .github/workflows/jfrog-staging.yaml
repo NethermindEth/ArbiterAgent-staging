@@ -1,0 +1,45 @@
+name: CI to build and push docker image into Jfrog
+
+on:
+  push:
+    branches:
+      - main
+      - feat/ci-backend
+
+permissions:
+  id-token: write
+  contents: write
+  attestations: write
+
+jobs:
+  base:
+    runs-on: ubuntu-latest
+    outputs:
+      DOCKER_IMAGE_TAG: ${{ steps.set_tag.outputs.DOCKER_IMAGE_TAG }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Define tags
+        id: set_tag
+        run: |
+          echo "DOCKER_IMAGE_TAG=$(git describe --tags --always) >> $GITHUB_OUTPUT"
+  arbitrer:
+    needs: [base]
+    uses: NethermindEth/github-workflows/.github/workflows/publish-docker.yaml@main
+    with:
+      group_name: kyoto
+      image_name: agentarena-arbitrer
+      dockerfile_path: ./Demo/Dockerfile
+      context: ./Demo
+      additional_tags: "latest,${{ needs.base.outputs.DOCKER_IMAGE_TAG }}"
+
+  promote_arbitrer:
+    needs: [arbitrer]
+    uses: NethermindEth/github-workflows/.github/workflows/promote-docker.yaml@main
+    with:
+      group_name: kyoto
+      image_name: agentarena-arbitrer
+      target_env: staging
+      tags: latest,${{ needs.base.outputs.DOCKER_IMAGE_TAG }}
