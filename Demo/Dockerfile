@@ -7,6 +7,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Create and set permissions for temporary directories
+RUN mkdir -p /tmp /var/tmp && \
+    chmod 777 /tmp /var/tmp
+
 # Create .dockerenv file to help with environment detection
 RUN touch /.dockerenv
 
